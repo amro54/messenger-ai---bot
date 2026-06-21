@@ -32,7 +32,7 @@ def ask_nvidia(prompt):
         "Content-Type": "application/json"
     }
     body = {
-        "model": "meta/llama-3.1-8b-instruct",
+        "model": "moonshotai/kimi-k2.6",
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 500
     }
