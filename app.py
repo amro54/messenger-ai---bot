@@ -4,6 +4,7 @@ import os
 
 app = Flask(__name__)
 
+# تأكد من إضافة هذه المتغيرات في إعدادات Render (Environment)
 VERIFY_TOKEN = "mysecrettoken123"
 PAGE_ACCESS_TOKEN = os.environ.get("PAGE_ACCESS_TOKEN")
 NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY")
@@ -26,9 +27,7 @@ def webhook():
                     sender_id = event["sender"]["id"]
                     user_msg = event["message"].get("text", "")
                     if user_msg:
-                        # الحصول على الرد من انفيديا
                         reply = ask_nvidia(user_msg)
-                        # إرسال الرد للمستخدم
                         send_message(sender_id, reply)
     return "OK", 200
 
@@ -38,41 +37,32 @@ def ask_nvidia(prompt):
             "Authorization": f"Bearer {NVIDIA_API_KEY}",
             "Content-Type": "application/json"
         }
-        
-        # رابط API الصحيح لـ NVIDIA
         url = "https://integrate.api.nvidia.com/v1/chat/completions"
-        
         payload = {
-            "model": "meta/llama3-8b-instruct", # يمكنك تغيير هذا إلى أي نموذج آخر متوفر في NVIDIA NIM
+            "model": "moonshotai/kimi-k2.6",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 1024,
-            "temperature": 0.5
+            "temperature": 1.0
         }
-        
         response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status() # هذه الدالة مهمة لالتقاط أخطاء الاتصال (مثل المفتاح الخاطئ)
-        
+        response.raise_for_status() 
         data = response.json()
         return data["choices"][0]["message"]["content"]
-        
     except Exception as e:
-        # إذا فشل الاتصال بانفيديا، سيتم طباعة الخطأ في السجلات هنا
         print(f"❌ NVIDIA API Error: {e}")
-        return "عذراً، حدث خطأ أثناء معالجة طلبك من الخادم."
+        return "عذراً، حدث خطأ أثناء معالجة طلبك."
 
 def send_message(recipient_id, text):
     try:
-        # إرسال الرد عبر Facebook Graph API
         url = f"https://graph.facebook.com/v19.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
-        
         payload = {
             "recipient": {"id": recipient_id},
             "message": {"text": text}
         }
         headers = {"Content-Type": "application/json"}
-        
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        
+        requests.post(url, headers=headers, json=payload)
     except Exception as e:
         print(f"❌ Messenger Send Error: {e}")
+
+if __name__ == "__main__":
+    app.run()
